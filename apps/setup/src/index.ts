@@ -296,13 +296,145 @@ async function run() {
   }
 }
 
+export async function runSetup(argv: string[] = process.argv.slice(2)) {
+  const options = parseArguments(argv);
 
+  if (options.doctor) {
+    await runDoctor();
+    if (!options.clients && !options.configPath && !options.interactive) return;
+  }
 
-try {
-  await run();
-} catch (error) {
-  console.error(error instanceof Error ? error.message : "Roview MCP setup failed");
-  usage();
-  process.exitCode = 1;
+  let selectedClients = options.clients ?? [];
+  let selectedMode = options.mode;
+
+  if (options.interactive) {
+    console.log("\n📐 \x1B[1mRoview MCP & Agent Setup\x1B[0m\n");
+
+    const detected = await detectClients(options.projectRoot);
+    const items = VALID_CLIENTS.map((id) => {
+      const info = CLIENT_REGISTRY[id];
+      const isDetected = detected.includes(id);
+      return {
+        id,
+        name: info.name,
+        description: isDetected ? `[Detected] ${info.description}` : info.description,
+        selected: isDetected,
+      };
+    });
+
+    selectedClients = await multiSelectPrompt({
+      title: "Select the AI agents / IDEs you would like to configure:",
+      items,
+    });
+
+    if (selectedClients.length === 0) {
+      console.log("\nNo agents selected. Setup cancelled.\n");
+      return;
+    }
+
+    selectedMode = await selectPrompt<SetupMode>({
+      title: "Select Roview MCP Setup Mode:",
+      items: [
+        {
+          id: "companion",
+          name: "Companion Mode (Recommended)",
+          description: "Keeps official Studio MCP for inspection and Roview MCP for human-approved mutations",
+        },
+        {
+          id: "safe",
+          name: "Safe Mode (Technical Enforcement)",
+          description: "Proxies read-only Studio tools and denies raw mutations through a single gateway",
+        },
+      ],
+      defaultIndex: 0,
+    });
+  }
+
+  const configuration = generateMcpConfiguration({
+    mode: selectedMode,
+    projectRoot: options.projectRoot,
+    ...(options.token ? { token: options.token } : {}),
+  });
+
+  const mutuallyExclusiveServers = selectedMode === "safe"
+    ? ["Roblox_Studio", "roview"]
+    : ["roview_safe"];
+
+  console.log("\n⚙️  Applying Roview Configuration...\n");
+
+  // If explicit single config path was passed
+  if (options.configPath) {
+    if (options.apply) {
+      await applyMcpConfiguration(
+        options.configPath,
+        configuration,
+        options.force,
+        mutuallyExclusiveServers,
+      );
+      console.log(`  ✔ Updated MCP config: ${options.configPath}`);
+    } else {
+      console.log(JSON.stringify(configuration, null, 2));
+    }
+  }
+
+  // If clients are selected (interactively or via --client/--clients)
+  const targetDir = options.policyTarget ?? options.projectRoot;
+  for (const client of selectedClients) {
+    const { mcpConfigPath } = resolveClientPaths(client, targetDir);
+
+    // Apply MCP config if available and applying
+    if (mcpConfigPath && options.apply) {
+      try {
+        await applyMcpConfiguration(
+          mcpConfigPath,
+          configuration,
+          options.force,
+          mutuallyExclusiveServers,
+        );
+        console.log(`  ✔ Configured ${CLIENT_REGISTRY[client].name} MCP: ${mcpConfigPath}`);
+      } catch (err) {
+        console.warn(`  ⚠️ Could not auto-write ${CLIENT_REGISTRY[client].name} MCP config (${mcpConfigPath}): ${(err as Error).message}`);
+      }
+    }
+
+    // Write policy pack
+    try {
+      const policyPath = await writePolicyPack(targetDir, client);
+      console.log(`  ✔ Wrote policy pack for ${CLIENT_REGISTRY[client].name}: ${policyPath}`);
+    } catch (err) {
+      console.warn(`  ⚠️ Could not write policy pack for ${CLIENT_REGISTRY[client].name}: ${(err as Error).message}`);
+    }
+  }
+
+  let pluginBuilt = false;
+  try {
+    await access(join(options.projectRoot, "roview-plugin.rbxm"));
+    pluginBuilt = true;
+  } catch {}
+
+  console.log("\n🎉 Setup Complete!\n");
+  console.log(`  Mode:        ${selectedMode === "companion" ? "Companion Mode (Roblox_Studio + roview)" : "Safe Mode (roview_safe gateway)"}`);
+  console.log(`  Session:     \x1B[32mAuto-discovered on loopback (http://127.0.0.1:3219)\x1B[0m`);
+  console.log("\nNext Steps:");
+  if (!pluginBuilt) {
+    console.log("  1. Build Studio plugin:  pnpm build:plugin  (creates roview-plugin.rbxm)");
+    console.log("  2. Start companion:      pnpm start  (or pnpm demo)");
+    console.log("  3. Open Studio & pair:   Install plugin in Studio and pair via widget code.");
+    console.log("  4. Agent review:         Your AI agents will now route Studio mutations through Roview!\n");
+  } else {
+    console.log("  1. Start companion:      pnpm start  (or pnpm demo)");
+    console.log("  2. Open Studio & pair:   Pair the Roview plugin widget using the pairing code.");
+    console.log("  3. Agent review:         Your AI agents will now route Studio mutations through Roview!\n");
+  }
+}
+
+if (process.argv[1] && (process.argv[1].endsWith("apps/setup/src/index.ts") || process.argv[1].endsWith("apps/setup/src/index.js"))) {
+  try {
+    await runSetup();
+  } catch (error) {
+    console.error(error instanceof Error ? error.message : "Roview MCP setup failed");
+    usage();
+    process.exitCode = 1;
+  }
 }
 

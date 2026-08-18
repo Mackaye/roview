@@ -2,5 +2,14 @@
   "name": "@roview/cli",
   "version": "0.1.0-draft.0",
   "private": true,
-  "type": "module"
+  "type": "module",
+  "bin": {
+    "roview": "./src/index.ts"
+  },
+  "dependencies": {
+    "@roview/companion": "workspace:*",
+    "@roview/mcp": "workspace:*",
+    "@roview/protocol": "workspace:*",
+    "@roview/setup": "workspace:*"
+  }
 }

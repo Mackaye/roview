@@ -114,4 +114,18 @@ describe("CLI Component Tests (apps/cli)", () => {
     const listAfterDelete = await runCli(["list"], env);
     expect(listAfterDelete.stdout).toContain("No proposals.");
   });
+
+  it("prints version and help information", async () => {
+    const versionResult = await runCli(["--version"]);
+    expect(versionResult.stdout).toMatch(/roview v\d+\.\d+\.\d+/);
+
+    await expect(runCli(["--help"])).rejects.toThrow();
+  });
+
+  it("executes plugin subcommands through CLI", async () => {
+    const pathResult = await runCli(["plugin", "path"]);
+    expect(pathResult.stdout).toContain("Roblox");
+    expect(pathResult.stdout).toContain("Plugins");
+  });
 });
+

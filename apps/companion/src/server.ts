@@ -1,4 +1,5 @@
 import { createHash, randomBytes, randomUUID, timingSafeEqual } from "node:crypto";
+import { existsSync } from "node:fs";
 import { mkdir, open, readFile, unlink, writeFile } from "node:fs/promises";
 import { createServer, type IncomingMessage, type ServerResponse } from "node:http";
 import { basename, dirname, extname, join, resolve } from "node:path";
@@ -15,7 +16,29 @@ import { ProposalStore } from "./store.js";
 
 const DEFAULT_PORT = 3219;
 const MAX_BODY_BYTES = 10 * 1024 * 1024;
-const publicDirectory = fileURLToPath(new URL("../public/", import.meta.url));
+
+export function resolvePublicDirectory(): string {
+  const currentDir = dirname(fileURLToPath(import.meta.url));
+  const candidates = [
+    // apps/companion/src -> apps/companion/public (dev tsx)
+    resolve(currentDir, "../public"),
+    // dist/bin -> dist/public (bundled production)
+    resolve(currentDir, "../public"),
+    resolve(currentDir, "public"),
+    // relative to workspace cwd
+    resolve(process.cwd(), "apps/companion/public"),
+    resolve(process.cwd(), "public"),
+  ];
+
+  for (const candidate of candidates) {
+    if (existsSync(join(candidate, "index.html"))) {
+      return candidate;
+    }
+  }
+  return resolve(currentDir, "../public");
+}
+
+const publicDirectory = resolvePublicDirectory();
 const mimeTypes: Record<string, string> = {
   ".css": "text/css; charset=utf-8",
   ".html": "text/html; charset=utf-8",
@@ -408,12 +431,20 @@ export function createCompanion(options: CompanionOptions = {}) {
   return { server, store, get token() { return token; }, pairingCode };
 }
 
-async function start() {
-  const preferredPort = Number(process.env.ROVIEW_PORT ?? DEFAULT_PORT);
-  const configuredToken = process.env.ROVIEW_TOKEN;
-  const retentionDays = Number(process.env.ROVIEW_RETENTION_DAYS ?? 30);
+export interface StartCompanionOptions {
+  port?: number | undefined;
+  token?: string | undefined;
+  retentionDays?: number | undefined;
+  persistencePath?: string | undefined;
+  demoFixture?: boolean | undefined;
+}
+
+export async function startCompanion(options: StartCompanionOptions = {}) {
+  const preferredPort = options.port ?? Number(process.env.ROVIEW_PORT ?? DEFAULT_PORT);
+  const configuredToken = options.token ?? process.env.ROVIEW_TOKEN;
+  const retentionDays = options.retentionDays ?? Number(process.env.ROVIEW_RETENTION_DAYS ?? 30);
   if (!Number.isInteger(retentionDays) || retentionDays < 1) throw new Error("ROVIEW_RETENTION_DAYS must be a positive integer");
-  const persistencePath = resolve(process.env.ROVIEW_DATA_PATH ?? ".roview/proposals.json");
+  const persistencePath = resolve(options.persistencePath ?? process.env.ROVIEW_DATA_PATH ?? ".roview/proposals.json");
   const dataDirectory = dirname(persistencePath);
   await mkdir(dataDirectory, { recursive: true, mode: 0o700 });
   const lockPath = join(dataDirectory, "companion.lock");
@@ -445,7 +476,7 @@ async function start() {
   await lockHandle.writeFile(JSON.stringify({ pid: process.pid, startedAt }), "utf8");
   const store = await ProposalStore.open(persistencePath, retentionDays);
   const companion = createCompanion({ ...(configuredToken ? { token: configuredToken } : {}), store });
-  if (process.env.ROVIEW_DEMO_FIXTURE === "1") {
+  if (options.demoFixture || process.env.ROVIEW_DEMO_FIXTURE === "1") {
     const fixtureUrl = new URL("../../../packages/fixtures/proposals/daily-reward.json", import.meta.url);
     const proposal = parseProposal(JSON.parse(await readFile(fixtureUrl, "utf8")));
     if (!companion.store.get(proposal.proposalId, proposal.revision)) {
@@ -482,8 +513,23 @@ async function start() {
     await unlink(discoveryPath).catch(() => {});
   };
   companion.server.once("close", () => void cleanup());
-  console.log(`Roview companion: http://127.0.0.1:${port}/review?token=${companion.token}`);
-  console.log(`Studio pairing value (one use): http://127.0.0.1:${port}|${companion.pairingCode}`);
+  const reviewUrl = `http://127.0.0.1:${port}/review?token=${companion.token}`;
+  const pairingValue = `http://127.0.0.1:${port}|${companion.pairingCode}`;
+  console.log(`Roview companion: ${reviewUrl}`);
+  console.log(`Studio pairing value (one use): ${pairingValue}`);
+
+  return {
+    port,
+    token: companion.token,
+    pairingCode: companion.pairingCode,
+    reviewUrl,
+    pairingValue,
+    server: companion.server,
+    store: companion.store,
+    close: () => new Promise<void>((res) => companion.server.close(() => res())),
+  };
 }
 
-if (process.argv[1] && fileURLToPath(import.meta.url) === process.argv[1]) void start();
+if (process.argv[1] && (process.argv[1].endsWith("apps/companion/src/server.ts") || process.argv[1].endsWith("apps/companion/src/server.js"))) {
+  void startCompanion();
+}
