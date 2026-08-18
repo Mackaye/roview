@@ -165,12 +165,25 @@ function ReviewWidget.new(widget: DockWidgetPluginGui, callbacks: Callbacks)
 	local brandLabel = label(topBar, "ROVIEW", 15, COLORS.text)
 	brandLabel.Font = Enum.Font.BuilderSansBold
 	brandLabel.Position = UDim2.fromOffset(14, 0)
-	brandLabel.Size = UDim2.new(0, 92, 1, 0)
+	brandLabel.Size = UDim2.new(0, 70, 1, 0)
+
+	local versionPill = Instance.new("Frame")
+	versionPill.BackgroundColor3 = COLORS.surface
+	versionPill.BorderSizePixel = 0
+	versionPill.Position = UDim2.fromOffset(88, 12)
+	versionPill.Size = UDim2.fromOffset(48, 20)
+	versionPill.Parent = topBar
+	corner(versionPill, 4)
+
+	local versionLabel = label(versionPill, "v0.1.0", 11, COLORS.muted)
+	versionLabel.Font = Enum.Font.BuilderSansMedium
+	versionLabel.Size = UDim2.fromScale(1, 1)
+	versionLabel.TextXAlignment = Enum.TextXAlignment.Center
 
 	local breadcrumb = label(topBar, "Waiting for proposal...", 14, COLORS.muted)
 	breadcrumb.Font = Enum.Font.BuilderSans
-	breadcrumb.Position = UDim2.fromOffset(112, 0)
-	breadcrumb.Size = UDim2.fromScale(0.35, 1)
+	breadcrumb.Position = UDim2.fromOffset(146, 0)
+	breadcrumb.Size = UDim2.fromScale(0.32, 1)
 	breadcrumb.TextTruncate = Enum.TextTruncate.AtEnd
 	self.breadcrumb = breadcrumb
 
@@ -643,7 +656,7 @@ function ReviewWidget.new(widget: DockWidgetPluginGui, callbacks: Callbacks)
 	padding(connModal, 16)
 	self.connModal = connModal
 
-	local connTitle = label(connModal, "Roview Connection & Sessions", 15, COLORS.text)
+	local connTitle = label(connModal, "Roview Connection & Sessions (v0.1.0)", 15, COLORS.text)
 	connTitle.Font = Enum.Font.BuilderSansBold
 	connTitle.Position = UDim2.fromOffset(0, 0)
 	connTitle.Size = UDim2.new(1, -36, 0, 24)
