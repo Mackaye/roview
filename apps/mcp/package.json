@@ -1,0 +1,12 @@
+{
+  "name": "@roview/mcp",
+  "version": "0.1.0-draft.0",
+  "private": true,
+  "type": "module",
+  "dependencies": {
+    "@modelcontextprotocol/client": "^2.0.0",
+    "@modelcontextprotocol/server": "^2.0.0",
+    "@roview/protocol": "workspace:*",
+    "zod": "^4.4.3"
+  }
+}
