@@ -1,0 +1,84 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - "v*.*.*"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  id-token: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 10
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+          registry-url: "https://registry.npmjs.org"
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Typecheck & Run Tests
+        run: |
+          pnpm build
+          pnpm test
+
+      - name: Setup Rojo
+        uses: rojo-rbx/setup-rojo@v2
+        with:
+          rojo-version: 7.5.1
+
+      - name: Setup Selene
+        uses: Kampfkarren/selene-action@v1
+        with:
+          version: 0.28.0
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Setup StyLua
+        uses: JohnnyMorganz/stylua-action@v1
+        with:
+          version: 2.1.0
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Check & Format Luau
+        run: |
+          pnpm check:luau
+          pnpm format:luau
+
+      - name: Build Studio Plugin Binary
+        run: pnpm build:plugin
+
+      - name: Build Production Bundle (tsup)
+        run: pnpm build:package
+
+      - name: Publish to NPM
+        run: npm publish --access public --provenance
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: |
+            roview-plugin.rbxm
+            dist/assets/roview-plugin.rbxm
+          generate_release_notes: true
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
