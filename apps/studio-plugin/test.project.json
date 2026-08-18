@@ -1,0 +1,18 @@
+{
+  "name": "RoviewPluginTests",
+  "tree": {
+    "$className": "DataModel",
+    "ReplicatedStorage": {
+      "$className": "ReplicatedStorage",
+      "RoviewModules": {
+        "$path": "src/modules"
+      }
+    },
+    "ServerScriptService": {
+      "$className": "ServerScriptService",
+      "RoviewTests": {
+        "$path": "test"
+      }
+    }
+  }
+}

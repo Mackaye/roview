@@ -1,0 +1,9 @@
+{
+  "name": "RoviewSafetySpikes",
+  "tree": {
+    "$path": "spike",
+    "modules": {
+      "$path": "src/modules"
+    }
+  }
+}
