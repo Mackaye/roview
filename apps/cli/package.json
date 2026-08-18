@@ -1,0 +1,6 @@
+{
+  "name": "@roview/cli",
+  "version": "0.1.0-draft.0",
+  "private": true,
+  "type": "module"
+}
