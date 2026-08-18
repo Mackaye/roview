@@ -219,7 +219,7 @@ function ReviewWidget.new(widget: DockWidgetPluginGui, callbacks: Callbacks)
 	self.topBar = topBar
 
 	local brandIcon = Instance.new("ImageLabel")
-	brandIcon.Image = "rbxassetid://121447948813202"
+	brandIcon.Image = "rbxthumb://type=Asset&id=121447948813202&w=150&h=150"
 	brandIcon.BackgroundTransparency = 1
 	brandIcon.Position = UDim2.fromOffset(14, 10)
 	brandIcon.Size = UDim2.fromOffset(24, 24)

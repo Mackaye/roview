@@ -15,8 +15,11 @@ local TOKEN_SETTING = "sessionToken"
 local BASE_URL_SETTING = "companionBaseUrl"
 
 local toolbar = plugin:CreateToolbar("Roview")
-local toolbarButton =
-	toolbar:CreateButton("Review changes", "Open Roview review", "rbxassetid://121447948813202")
+local toolbarButton = toolbar:CreateButton(
+	"Roview",
+	"Open Roview review IDE",
+	"rbxthumb://type=Asset&id=121447948813202&w=150&h=150"
+)
 toolbarButton.ClickableWhenViewportHidden = true
 
 local widgetInfo = DockWidgetPluginGuiInfo.new(Enum.InitialDockState.Right, false, false, 380, 580, 320, 400)
