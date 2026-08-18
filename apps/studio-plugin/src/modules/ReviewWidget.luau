@@ -99,6 +99,62 @@ local function setButtonEnabled(item: TextButton, enabled: boolean, background: 
 	item.TextColor3 = if enabled then COLORS.text else COLORS.muted
 end
 
+local function getStatusColor(status: string): Color3
+	if status == "READY_FOR_REVIEW" then
+		return COLORS.accent
+	elseif status == "APPROVED" or status == "APPLIED" then
+		return COLORS.green
+	elseif status == "CHANGES_REQUESTED" then
+		return COLORS.amber
+	elseif status == "REJECTED" or status == "APPLY_FAILED" or status == "CONFLICTED" then
+		return COLORS.red
+	else
+		return COLORS.muted
+	end
+end
+
+local function getStatusLabel(status: string): string
+	if status == "READY_FOR_REVIEW" then
+		return "Ready for Review"
+	elseif status == "APPROVED" then
+		return "Approved"
+	elseif status == "APPLIED" then
+		return "Applied"
+	elseif status == "CHANGES_REQUESTED" then
+		return "Changes Requested"
+	elseif status == "SUPERSEDED" then
+		return "Superseded"
+	elseif status == "REJECTED" then
+		return "Rejected"
+	elseif status == "APPLYING" then
+		return "Applying..."
+	elseif status == "PREFLIGHT" then
+		return "Preflight"
+	elseif status == "CONFLICTED" then
+		return "Conflicted"
+	else
+		return status
+	end
+end
+
+local function getStatusPriority(status: string): number
+	if
+		status == "READY_FOR_REVIEW"
+		or status == "APPROVED"
+		or status == "PREFLIGHT"
+		or status == "APPLYING"
+	then
+		return 0
+	elseif status == "CHANGES_REQUESTED" or status == "CONFLICTED" or status == "APPLY_FAILED" then
+		return 1
+	elseif status == "APPLIED" then
+		return 2
+	elseif status == "SUPERSEDED" or status == "REJECTED" or status == "CANCELLED" then
+		return 3
+	end
+	return 4
+end
+
 function ReviewWidget.new(widget: DockWidgetPluginGui, callbacks: Callbacks)
 	widget.Title = "Roview — Review IDE"
 	local self = setmetatable({
@@ -162,15 +218,23 @@ function ReviewWidget.new(widget: DockWidgetPluginGui, callbacks: Callbacks)
 	topBar.Parent = root
 	self.topBar = topBar
 
+	local brandIcon = Instance.new("ImageLabel")
+	brandIcon.Image = "rbxassetid://121447948813202"
+	brandIcon.BackgroundTransparency = 1
+	brandIcon.Position = UDim2.fromOffset(14, 10)
+	brandIcon.Size = UDim2.fromOffset(24, 24)
+	brandIcon.Parent = topBar
+	corner(brandIcon, 4)
+
 	local brandLabel = label(topBar, "ROVIEW", 15, COLORS.text)
 	brandLabel.Font = Enum.Font.BuilderSansBold
-	brandLabel.Position = UDim2.fromOffset(14, 0)
-	brandLabel.Size = UDim2.new(0, 70, 1, 0)
+	brandLabel.Position = UDim2.fromOffset(44, 0)
+	brandLabel.Size = UDim2.new(0, 64, 1, 0)
 
 	local versionPill = Instance.new("Frame")
 	versionPill.BackgroundColor3 = COLORS.surface
 	versionPill.BorderSizePixel = 0
-	versionPill.Position = UDim2.fromOffset(88, 12)
+	versionPill.Position = UDim2.fromOffset(114, 12)
 	versionPill.Size = UDim2.fromOffset(48, 20)
 	versionPill.Parent = topBar
 	corner(versionPill, 4)
@@ -182,14 +246,14 @@ function ReviewWidget.new(widget: DockWidgetPluginGui, callbacks: Callbacks)
 
 	local breadcrumb = label(topBar, "Waiting for proposal...", 14, COLORS.muted)
 	breadcrumb.Font = Enum.Font.BuilderSans
-	breadcrumb.Position = UDim2.fromOffset(146, 0)
+	breadcrumb.Position = UDim2.fromOffset(172, 0)
 	breadcrumb.Size = UDim2.fromScale(0.32, 1)
 	breadcrumb.TextTruncate = Enum.TextTruncate.AtEnd
 	self.breadcrumb = breadcrumb
 
 	-- Top Action Buttons (Right-aligned)
 	local sessionBtn = button(topBar, "⚙️ Session", COLORS.raised)
-	sessionBtn.Position = UDim2.new(1, -534, 0, 7)
+	sessionBtn.Position = UDim2.new(1, -516, 0, 7)
 	sessionBtn.Size = UDim2.fromOffset(98, 30)
 	sessionBtn.TextSize = 12
 	sessionBtn.Activated:Connect(function()
@@ -198,7 +262,7 @@ function ReviewWidget.new(widget: DockWidgetPluginGui, callbacks: Callbacks)
 	self.sessionBtn = sessionBtn
 
 	local modeToggle = button(topBar, "Split", COLORS.raised)
-	modeToggle.Position = UDim2.new(1, -430, 0, 7)
+	modeToggle.Position = UDim2.new(1, -412, 0, 7)
 	modeToggle.Size = UDim2.fromOffset(74, 30)
 	modeToggle.TextSize = 12
 	modeToggle.Activated:Connect(function()
@@ -207,12 +271,6 @@ function ReviewWidget.new(widget: DockWidgetPluginGui, callbacks: Callbacks)
 		self:renderActiveItem()
 	end)
 	self.modeToggle = modeToggle
-
-	local refreshBtn = button(topBar, "↻", COLORS.raised)
-	refreshBtn.Position = UDim2.new(1, -372, 0, 7)
-	refreshBtn.Size = UDim2.fromOffset(34, 30)
-	refreshBtn.TextSize = 15
-	refreshBtn.Activated:Connect(callbacks.onRefresh)
 
 	local reqChangesBtn = button(topBar, "Send Feedback", COLORS.amber)
 	reqChangesBtn.Position = UDim2.new(1, -332, 0, 7)
@@ -786,7 +844,7 @@ function ReviewWidget.new(widget: DockWidgetPluginGui, callbacks: Callbacks)
 	propModal.BorderSizePixel = 1
 	propModal.BorderColor3 = COLORS.border
 	propModal.Position = UDim2.fromScale(0.5, 0.5)
-	propModal.Size = UDim2.fromOffset(460, 360)
+	propModal.Size = UDim2.fromOffset(480, 400)
 	propModal.ZIndex = 81
 	propModal.Parent = propOverlay
 	corner(propModal, 8)
@@ -944,58 +1002,221 @@ function ReviewWidget:renderProposalList()
 		end
 	end
 
-	local totalRecords = #self.records
-	for i, record in self.records do
-		local isCurrent = (
-			self.selected
-			and self.selected.proposal.proposalId == record.proposal.proposalId
-			and self.selected.proposal.revision == record.proposal.revision
-		)
-		local isLatest = (i == totalRecords)
+	if #self.records == 0 then
+		local empty = label(self.propScroll, "No proposals found in session.", 12, COLORS.muted)
+		empty.Size = UDim2.new(1, 0, 0, 40)
+		empty.TextXAlignment = Enum.TextXAlignment.Center
+		empty.Parent = self.propScroll
+		return
+	end
 
-		local card = Instance.new("Frame")
-		card.BackgroundColor3 = if isCurrent then COLORS.raised else COLORS.surface
-		card.BorderSizePixel = 0
-		card.LayoutOrder = totalRecords - i -- Newest at top
-		card.Size = UDim2.new(1, 0, 0, 56)
-		card.ZIndex = 83
-		card.Parent = self.propScroll
-		corner(card, 5)
-		padding(card, 6)
+	type GroupInfo = {
+		proposalId: string,
+		title: string,
+		latestRecord: any,
+		records: { any },
+		priority: number,
+		latestTime: string,
+	}
 
-		local titleText = if isLatest then `[🌟 LATEST] {record.proposal.title}` else record.proposal.title
+	local groupsMap: { [string]: GroupInfo } = {}
+	local groupList: { GroupInfo } = {}
 
-		local title = label(card, titleText, 12, if isLatest then COLORS.accent else COLORS.text)
-		title.Font = Enum.Font.BuilderSansBold
-		title.Position = UDim2.fromOffset(4, 2)
-		title.Size = UDim2.new(1, -96, 0, 18)
-		title.TextTruncate = Enum.TextTruncate.AtEnd
-		title.ZIndex = 84
+	for _, record in self.records do
+		local id = record.proposal.proposalId
+		if not groupsMap[id] then
+			local group: GroupInfo = {
+				proposalId = id,
+				title = record.proposal.title or "Untitled Proposal",
+				latestRecord = record,
+				records = {},
+				priority = 4,
+				latestTime = "",
+			}
+			groupsMap[id] = group
+			table.insert(groupList, group)
+		end
+		table.insert(groupsMap[id].records, record)
+	end
 
-		local timeStr = if record.proposal.createdAt
-			then string.sub(record.proposal.createdAt, 12, 19) .. " UTC"
-			else ""
-		local sub =
-			label(card, `Rev {record.proposal.revision} · {record.status} · {timeStr}`, 11, COLORS.muted)
-		sub.Position = UDim2.fromOffset(4, 24)
-		sub.Size = UDim2.new(1, -96, 0, 16)
-		sub.ZIndex = 84
+	-- Sort records inside each group by revision descending (newest revision at top)
+	for _, group in groupList do
+		table.sort(group.records, function(a, b)
+			return (a.proposal.revision or 1) > (b.proposal.revision or 1)
+		end)
+		local tip = group.records[1]
+		group.latestRecord = tip
+		group.title = tip.proposal.title or group.title
+		group.priority = getStatusPriority(tip.status)
+		group.latestTime = tip.proposal.createdAt or ""
+	end
 
-		local selBtn = button(
-			card,
-			if isCurrent then "Active" else "Select",
-			if isCurrent then COLORS.raised else COLORS.green
-		)
-		selBtn.Position = UDim2.new(1, -84, 0, 12)
-		selBtn.Size = UDim2.fromOffset(80, 28)
-		selBtn.TextSize = 11
-		selBtn.ZIndex = 84
-		if not isCurrent then
-			selBtn.Activated:Connect(function()
-				self.selected = record
-				self:render(self.records)
-				self.propOverlay.Visible = false
-			end)
+	-- Sort groups: Actionable first, then newest creation time
+	table.sort(groupList, function(a, b)
+		if a.priority ~= b.priority then
+			return a.priority < b.priority
+		end
+		return a.latestTime > b.latestTime
+	end)
+
+	for groupIndex, group in groupList do
+		local revCount = #group.records
+		local tip = group.latestRecord
+
+		if revCount == 1 then
+			local record = tip
+			local isCurrent = (
+				self.selected
+				and self.selected.proposal.proposalId == record.proposal.proposalId
+				and self.selected.proposal.revision == record.proposal.revision
+			)
+
+			local card = Instance.new("Frame")
+			card.BackgroundColor3 = if isCurrent then COLORS.raised else COLORS.surface
+			card.BorderSizePixel = 0
+			card.LayoutOrder = groupIndex
+			card.Size = UDim2.new(1, 0, 0, 56)
+			card.ZIndex = 83
+			card.Parent = self.propScroll
+			corner(card, 6)
+			padding(card, 8)
+
+			local title = label(card, record.proposal.title, 12, COLORS.text)
+			title.Font = Enum.Font.BuilderSansBold
+			title.Position = UDim2.fromOffset(2, 2)
+			title.Size = UDim2.new(1, -88, 0, 18)
+			title.TextTruncate = Enum.TextTruncate.AtEnd
+			title.ZIndex = 84
+
+			local timeStr = if record.proposal.createdAt
+				then string.sub(record.proposal.createdAt, 12, 19) .. " UTC"
+				else ""
+			local statusLbl = getStatusLabel(record.status)
+			local sub = label(
+				card,
+				`Rev {record.proposal.revision} · {statusLbl} · {timeStr}`,
+				11,
+				getStatusColor(record.status)
+			)
+			sub.Position = UDim2.fromOffset(2, 22)
+			sub.Size = UDim2.new(1, -88, 0, 16)
+			sub.ZIndex = 84
+
+			local selBtn = button(
+				card,
+				if isCurrent then "Active" else "Select",
+				if isCurrent then COLORS.raised else COLORS.green
+			)
+			selBtn.Position = UDim2.new(1, -76, 0, 10)
+			selBtn.Size = UDim2.fromOffset(72, 28)
+			selBtn.TextSize = 11
+			selBtn.ZIndex = 84
+			if not isCurrent then
+				selBtn.Activated:Connect(function()
+					self.selected = record
+					self:render(self.records)
+					self.propOverlay.Visible = false
+				end)
+			end
+		else
+			-- Multi-revision group card
+			local card = Instance.new("Frame")
+			card.AutomaticSize = Enum.AutomaticSize.Y
+			card.BackgroundColor3 = COLORS.surface
+			card.BorderSizePixel = 0
+			card.LayoutOrder = groupIndex
+			card.Size = UDim2.fromScale(1, 0)
+			card.ZIndex = 83
+			card.Parent = self.propScroll
+			corner(card, 6)
+			padding(card, 8)
+
+			local cardLayout = Instance.new("UIListLayout")
+			cardLayout.Padding = UDim.new(0, 4)
+			cardLayout.SortOrder = Enum.SortOrder.LayoutOrder
+			cardLayout.Parent = card
+
+			-- Header container
+			local headerFrame = Instance.new("Frame")
+			headerFrame.BackgroundTransparency = 1
+			headerFrame.LayoutOrder = 0
+			headerFrame.Size = UDim2.new(1, 0, 0, 36)
+			headerFrame.ZIndex = 84
+			headerFrame.Parent = card
+
+			local title = label(headerFrame, group.title, 12, COLORS.text)
+			title.Font = Enum.Font.BuilderSansBold
+			title.Position = UDim2.fromOffset(2, 0)
+			title.Size = UDim2.new(1, -4, 0, 18)
+			title.TextTruncate = Enum.TextTruncate.AtEnd
+			title.ZIndex = 85
+
+			local latestTimeStr = if tip.proposal.createdAt
+				then string.sub(tip.proposal.createdAt, 12, 19) .. " UTC"
+				else ""
+			local sub = label(
+				headerFrame,
+				`{revCount} revisions · Tip: Rev {tip.proposal.revision} ({getStatusLabel(tip.status)}) · {latestTimeStr}`,
+				11,
+				COLORS.muted
+			)
+			sub.Position = UDim2.fromOffset(2, 18)
+			sub.Size = UDim2.new(1, -4, 0, 16)
+			sub.ZIndex = 85
+
+			-- List of revisions (newest to oldest)
+			for revIndex, revRecord in group.records do
+				local isCurrentRev = (
+					self.selected
+					and self.selected.proposal.proposalId == revRecord.proposal.proposalId
+					and self.selected.proposal.revision == revRecord.proposal.revision
+				)
+				local isTipRev = (revIndex == 1)
+
+				local revRow = Instance.new("Frame")
+				revRow.BackgroundColor3 = if isCurrentRev then COLORS.raised else COLORS.canvas
+				revRow.BorderSizePixel = 0
+				revRow.LayoutOrder = revIndex
+				revRow.Size = UDim2.new(1, 0, 0, 30)
+				revRow.ZIndex = 85
+				revRow.Parent = card
+				corner(revRow, 4)
+				padding(revRow, 4)
+
+				local tipTag = if isTipRev then " (Latest)" else ""
+				local revTimeStr = if revRecord.proposal.createdAt
+					then string.sub(revRecord.proposal.createdAt, 12, 19) .. " UTC"
+					else ""
+				local revLabelText = `Rev {revRecord.proposal.revision}{tipTag} · {getStatusLabel(
+					revRecord.status
+				)} · {revTimeStr}`
+
+				local revLabel =
+					label(revRow, revLabelText, 11, if isTipRev then COLORS.text else COLORS.muted)
+				revLabel.Position = UDim2.fromOffset(4, 0)
+				revLabel.Size = UDim2.new(1, -78, 1, 0)
+				revLabel.TextTruncate = Enum.TextTruncate.AtEnd
+				revLabel.ZIndex = 86
+
+				local revBtn = button(
+					revRow,
+					if isCurrentRev then "Active" else "Select",
+					if isCurrentRev
+						then COLORS.raised
+						else (if isTipRev then COLORS.green else COLORS.surface)
+				)
+				revBtn.Position = UDim2.new(1, -66, 0.5, -11)
+				revBtn.Size = UDim2.fromOffset(62, 22)
+				revBtn.TextSize = 10
+				revBtn.ZIndex = 86
+				if not isCurrentRev then
+					revBtn.Activated:Connect(function()
+						self.selected = revRecord
+						self:render(self.records)
+						self.propOverlay.Visible = false
+					end)
+				end
+			end
 		end
 	end
 end
@@ -1785,44 +2006,50 @@ end
 function ReviewWidget:render(records: { any })
 	self.records = records
 
-	local prevProposalId = if self.selected then self.selected.proposal.proposalId else nil
 	local selected = nil
 
-	-- 1. If we are tracking a proposal ID, select its highest revision
-	if prevProposalId then
-		local bestRev = -1
+	-- 1. If we already had a selected proposal + revision, keep it if it's still present in records
+	if self.selected then
+		local curId = self.selected.proposal.proposalId
+		local curRev = self.selected.proposal.revision
 		for _, candidate in records do
-			if candidate.proposal.proposalId == prevProposalId then
-				local rev = candidate.proposal.revision or 1
-				if rev > bestRev then
-					bestRev = rev
-					selected = candidate
+			if candidate.proposal.proposalId == curId and candidate.proposal.revision == curRev then
+				selected = candidate
+				break
+			end
+		end
+
+		-- If the exact revision isn't present anymore, fallback to the highest revision of the same proposalId
+		if not selected then
+			local bestRev = -1
+			for _, candidate in records do
+				if candidate.proposal.proposalId == curId then
+					local rev = candidate.proposal.revision or 1
+					if rev > bestRev then
+						bestRev = rev
+						selected = candidate
+					end
 				end
 			end
 		end
 	end
 
-	-- 2. If no prior selection, find the highest actionable proposal
-	if not selected then
-		local bestCandidate = nil
-		for _, candidate in records do
-			if
-				candidate.status == "READY_FOR_REVIEW"
-				or candidate.status == "APPROVED"
-				or candidate.status == "PREFLIGHT"
-				or candidate.status == "APPLYING"
-			then
-				if not bestCandidate or (candidate.proposal.revision > bestCandidate.proposal.revision) then
-					bestCandidate = candidate
-				end
-			end
-		end
-		selected = bestCandidate
-	end
-
-	-- 3. Fallback to newest record
+	-- 2. If no prior selection, find the most actionable and newest proposal tip
 	if not selected and #records > 0 then
-		selected = records[#records]
+		local bestCandidate = nil
+		local bestPriority = 999
+		local bestTime = ""
+
+		for _, candidate in records do
+			local priority = getStatusPriority(candidate.status)
+			local time = candidate.proposal.createdAt or ""
+			if priority < bestPriority or (priority == bestPriority and time > bestTime) then
+				bestPriority = priority
+				bestTime = time
+				bestCandidate = candidate
+			end
+		end
+		selected = bestCandidate or records[1]
 	end
 
 	self.selected = selected
