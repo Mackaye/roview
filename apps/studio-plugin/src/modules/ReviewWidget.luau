@@ -1840,8 +1840,12 @@ function ReviewWidget:renderActiveItem()
 			-- Render inline comment cards if any exist
 			local lineBefore = if pair.before then pair.before.line else nil
 			local lineAfter = if pair.after then pair.after.line else nil
-			local beforeComments = if lineBefore then self:getAnnotationsForLine(op.id, lineBefore, "before") else {}
-			local afterComments = if lineAfter then self:getAnnotationsForLine(op.id, lineAfter, "after") else {}
+			local beforeComments = if lineBefore
+				then self:getAnnotationsForLine(op.id, lineBefore, "before")
+				else {}
+			local afterComments = if lineAfter
+				then self:getAnnotationsForLine(op.id, lineAfter, "after")
+				else {}
 
 			if #beforeComments > 0 or #afterComments > 0 then
 				local commentRow = Instance.new("Frame")
@@ -1857,7 +1861,9 @@ function ReviewWidget:renderActiveItem()
 				leftCommentCell.BorderSizePixel = 0
 				leftCommentCell.Position = UDim2.fromScale(0, 0)
 				leftCommentCell.Size = UDim2.new(0.5, -1, 1, 0)
-				leftCommentCell.BackgroundColor3 = if #beforeComments > 0 then COLORS.canvas else COLORS.subtle
+				leftCommentCell.BackgroundColor3 = if #beforeComments > 0
+					then COLORS.canvas
+					else COLORS.subtle
 				leftCommentCell.Parent = commentRow
 				padding(leftCommentCell, 3)
 
@@ -1883,7 +1889,9 @@ function ReviewWidget:renderActiveItem()
 				rightCommentCell.BorderSizePixel = 0
 				rightCommentCell.Position = UDim2.fromScale(0.5, 0)
 				rightCommentCell.Size = UDim2.fromScale(0.5, 1)
-				rightCommentCell.BackgroundColor3 = if #afterComments > 0 then COLORS.canvas else COLORS.subtle
+				rightCommentCell.BackgroundColor3 = if #afterComments > 0
+					then COLORS.canvas
+					else COLORS.subtle
 				rightCommentCell.Parent = commentRow
 				padding(rightCommentCell, 3)
 
