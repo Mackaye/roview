@@ -1,0 +1,43 @@
+name: CI
+
+on:
+  push:
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm build
+      - run: pnpm test
+      - name: Setup Selene
+        uses: Kampfkarren/selene-action@v1
+        with:
+          version: 0.28.0
+          token: ${{ secrets.GITHUB_TOKEN }}
+      - name: Setup StyLua
+        uses: JohnnyMorganz/stylua-action@v1
+        with:
+          version: 2.1.0
+          token: ${{ secrets.GITHUB_TOKEN }}
+      - name: Setup Rojo
+        uses: rojo-rbx/setup-rojo@v2
+        with:
+          rojo-version: 7.5.1
+      - run: pnpm check:luau
+      - run: pnpm format:luau
+      - run: pnpm build:plugin
+      - run: pnpm build:studio-fixtures
