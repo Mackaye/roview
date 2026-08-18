@@ -460,52 +460,56 @@ function closeInlinePopover() {
   $("#inline-comment-popover").hidden = true;
 }
 
-function renderInlineCommentsRow(annotations, colSpan = 2) {
+function renderCommentBox(annotation) {
+  const box = element("div", "inline-comment-box");
+  const lineLabel = (annotation.lineStart && annotation.lineStart !== annotation.lineEnd)
+    ? `Lines ${annotation.lineStart}–${annotation.lineEnd}`
+    : `Line ${annotation.lineEnd || annotation.line}`;
+  
+  const header = element("div", "inline-comment-header");
+  header.append(
+    element("span", "", `${annotation.side ? annotation.side.toUpperCase() + " · " : ""}${lineLabel}`),
+  );
+  
+  const body = element("p", "inline-comment-body", annotation.body);
+  
+  // Check if the comment has a code suggestion block
+  const suggestionMatch = /```suggestion\n([\s\S]*?)\n```/.exec(annotation.body);
+  let suggestionBox = null;
+  if (suggestionMatch) {
+    suggestionBox = element("div", "inline-comment-suggestion");
+    const sugHeader = element("div", "inline-comment-suggestion-header", "Suggested Change");
+    const sugCode = element("pre", "line-code");
+    sugCode.innerHTML = highlightLuau(suggestionMatch[1]);
+    suggestionBox.append(sugHeader, sugCode);
+  }
+  
+  const actions = element("div", "inline-comment-actions");
+  const delBtn = element("button", "", "× Delete comment");
+  delBtn.addEventListener("click", () => {
+    const index = state.annotations.indexOf(annotation);
+    if (index >= 0) {
+      state.annotations.splice(index, 1);
+      renderAnnotations();
+      renderChange();
+      scheduleDraftSave();
+    }
+  });
+  actions.append(delBtn);
+  
+  box.append(header, body);
+  if (suggestionBox) box.append(suggestionBox);
+  box.append(actions);
+  return box;
+}
+
+function renderInlineCommentsRow(annotations, colSpan = 1) {
   const tr = element("tr", "inline-comment-row");
   const td = element("td", "");
-  td.colSpan = colSpan;
+  if (colSpan > 1) td.colSpan = colSpan;
   
   for (const annotation of annotations) {
-    const box = element("div", "inline-comment-box");
-    const lineLabel = (annotation.lineStart && annotation.lineStart !== annotation.lineEnd)
-      ? `Lines ${annotation.lineStart}–${annotation.lineEnd}`
-      : `Line ${annotation.lineEnd || annotation.line}`;
-    
-    const header = element("div", "inline-comment-header");
-    header.append(
-      element("span", "", `${annotation.side ? annotation.side.toUpperCase() + " · " : ""}${lineLabel}`),
-    );
-    
-    const body = element("p", "inline-comment-body", annotation.body);
-    
-    // Check if the comment has a code suggestion block
-    const suggestionMatch = /```suggestion\n([\s\S]*?)\n```/.exec(annotation.body);
-    let suggestionBox = null;
-    if (suggestionMatch) {
-      suggestionBox = element("div", "inline-comment-suggestion");
-      const sugHeader = element("div", "inline-comment-suggestion-header", "Suggested Change");
-      const sugCode = element("pre", "line-code");
-      sugCode.innerHTML = highlightLuau(suggestionMatch[1]);
-      suggestionBox.append(sugHeader, sugCode);
-    }
-    
-    const actions = element("div", "inline-comment-actions");
-    const delBtn = element("button", "", "× Delete comment");
-    delBtn.addEventListener("click", () => {
-      const index = state.annotations.indexOf(annotation);
-      if (index >= 0) {
-        state.annotations.splice(index, 1);
-        renderAnnotations();
-        renderChange();
-        scheduleDraftSave();
-      }
-    });
-    actions.append(delBtn);
-    
-    box.append(header, body);
-    if (suggestionBox) box.append(suggestionBox);
-    box.append(actions);
-    td.append(box);
+    td.append(renderCommentBox(annotation));
   }
   tr.append(td);
   return tr;
@@ -562,13 +566,32 @@ function renderSplitDiff(item, pairs) {
 
     const lineNumBefore = pair.before?.line;
     const lineNumAfter = pair.after?.line;
-    const comments = [
-      ...(lineNumBefore ? getAnnotationsForLine(item.operation.id, lineNumBefore, "before") : []),
-      ...(lineNumAfter ? getAnnotationsForLine(item.operation.id, lineNumAfter, "after") : []),
-    ];
+    const beforeComments = lineNumBefore ? getAnnotationsForLine(item.operation.id, lineNumBefore, "before") : [];
+    const afterComments = lineNumAfter ? getAnnotationsForLine(item.operation.id, lineNumAfter, "after") : [];
     
-    if (comments.length > 0) {
-      body.append(renderInlineCommentsRow(comments, 2));
+    if (beforeComments.length > 0 || afterComments.length > 0) {
+      const commentRow = element("tr", "inline-comment-row");
+      const leftCell = element("td", `diff-cell inline-comment-cell${beforeComments.length === 0 ? " empty" : ""}`);
+      const rightCell = element("td", `diff-cell inline-comment-cell${afterComments.length === 0 ? " empty" : ""}`);
+      
+      if (beforeComments.length > 0) {
+        for (const annotation of beforeComments) {
+          leftCell.append(renderCommentBox(annotation));
+        }
+      } else {
+        leftCell.append(element("div", "line-wrap empty inline-comment-empty-wrap"));
+      }
+
+      if (afterComments.length > 0) {
+        for (const annotation of afterComments) {
+          rightCell.append(renderCommentBox(annotation));
+        }
+      } else {
+        rightCell.append(element("div", "line-wrap empty inline-comment-empty-wrap"));
+      }
+
+      commentRow.append(leftCell, rightCell);
+      body.append(commentRow);
     }
   }
   table.append(body);
