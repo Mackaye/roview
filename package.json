@@ -1,0 +1,37 @@
+{
+  "name": "roview",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Local-first review for proposed Roblox Studio changes",
+  "type": "module",
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
+  "scripts": {
+    "build": "tsc --noEmit",
+    "cli": "tsx apps/cli/src/index.ts",
+    "demo": "ROVIEW_DEMO_FIXTURE=1 tsx apps/companion/src/server.ts",
+    "dev": "tsx watch apps/companion/src/server.ts",
+    "mcp": "tsx apps/mcp/src/index.ts",
+    "mcp:safe": "tsx apps/mcp/src/safe-index.ts",
+    "setup:mcp": "tsx apps/setup/src/index.ts",
+    "start": "tsx apps/companion/src/server.ts",
+    "test": "vitest run",
+    "test:e2e": "vitest run apps/companion/src/e2e.test.ts",
+    "test:watch": "vitest",
+    "check:luau": "selene --config apps/studio-plugin/selene.toml apps/studio-plugin/src apps/studio-plugin/test apps/studio-plugin/spike",
+    "format:luau": "stylua --check apps/studio-plugin/src apps/studio-plugin/test apps/studio-plugin/spike examples/demo-place/src",
+    "build:plugin": "rojo build apps/studio-plugin/default.project.json -o roview-plugin.rbxm",
+    "build:studio-fixtures": "rojo build examples/demo-place/default.project.json -o roview-demo.rbxlx && rojo build apps/studio-plugin/test.project.json -o roview-plugin-tests.rbxlx && rojo build apps/studio-plugin/spike.project.json -o roview-safety-spikes.rbxm"
+  },
+  "devDependencies": {
+    "@types/node": "^24.3.0",
+    "tsx": "^4.20.5",
+    "typescript": "^5.9.2",
+    "vitest": "^3.2.4"
+  },
+  "engines": {
+    "node": ">=22"
+  }
+}
