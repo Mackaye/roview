@@ -1871,12 +1871,12 @@ function ReviewWidget:renderActiveItem()
 				end
 
 				-- Divider
-				local splitDivider = Instance.new("Frame")
-				splitDivider.BackgroundColor3 = COLORS.rule
-				splitDivider.BorderSizePixel = 0
-				splitDivider.Position = UDim2.new(0.5, -1, 0, 0)
-				splitDivider.Size = UDim2.new(0, 1, 1, 0)
-				splitDivider.Parent = commentRow
+				local commentDivider = Instance.new("Frame")
+				commentDivider.BackgroundColor3 = COLORS.rule
+				commentDivider.BorderSizePixel = 0
+				commentDivider.Position = UDim2.new(0.5, -1, 0, 0)
+				commentDivider.Size = UDim2.new(0, 1, 1, 0)
+				commentDivider.Parent = commentRow
 
 				-- Right Cell (After)
 				local rightCommentCell = Instance.new("Frame")
