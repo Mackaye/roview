@@ -124,7 +124,7 @@ describe("CLI Component Tests (apps/cli)", () => {
 
   it("executes plugin subcommands through CLI", async () => {
     const pathResult = await runCli(["plugin", "path"]);
-    expect(pathResult.stdout).toContain("Roblox");
+    expect(pathResult.stdout).toMatch(/roblox/i);
     expect(pathResult.stdout).toContain("Plugins");
   });
 });

@@ -2,42 +2,134 @@ name: CI
 
 on:
   push:
+    branches: [main]
   pull_request:
+  workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
 
 permissions:
   contents: read
 
 jobs:
-  verify:
+  lint:
+    name: Lint & Typecheck
     runs-on: ubuntu-latest
-    timeout-minutes: 20
+    timeout-minutes: 15
     steps:
-      - uses: actions/checkout@v4
-      - uses: pnpm/action-setup@v4
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
         with:
           version: 10
-      - uses: actions/setup-node@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
         with:
           node-version: 22
           cache: pnpm
-      - run: pnpm install --frozen-lockfile
-      - run: pnpm build
-      - run: pnpm test
-      - name: Setup Selene
-        uses: Kampfkarren/selene-action@v1
+
+      - name: Setup Aftman toolchain (Rojo, Selene, StyLua)
+        uses: ok-nick/setup-aftman@v0.4.2
         with:
-          version: 0.28.0
           token: ${{ secrets.GITHUB_TOKEN }}
-      - name: Setup StyLua
-        uses: JohnnyMorganz/stylua-action@v1
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: TypeScript Workspace Typecheck
+        run: pnpm build
+
+      - name: Selene Luau Linting
+        run: pnpm check:luau
+
+      - name: StyLua Luau Code Formatting
+        run: pnpm format:luau
+
+  test:
+    name: Unit & Integration Tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
         with:
-          version: 2.1.0
+          version: 10
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - name: Setup Aftman toolchain (Rojo, Selene, StyLua)
+        uses: ok-nick/setup-aftman@v0.4.2
+        with:
           token: ${{ secrets.GITHUB_TOKEN }}
-      - name: Setup Rojo
-        uses: rojo-rbx/setup-rojo@v2
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Build Studio Plugin Binary
+        run: pnpm build:plugin
+
+      - name: Run Vitest Suite
+        run: pnpm test
+
+  build:
+    name: Build & Packaging
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
         with:
-          rojo-version: 7.5.1
-      - run: pnpm check:luau
-      - run: pnpm format:luau
-      - run: pnpm build:plugin
-      - run: pnpm build:studio-fixtures
+          version: 10
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - name: Setup Aftman toolchain (Rojo, Selene, StyLua)
+        uses: ok-nick/setup-aftman@v0.4.2
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Build Studio Plugin Binary
+        run: pnpm build:plugin
+
+      - name: Build Studio Fixtures
+        run: pnpm build:studio-fixtures
+
+      - name: Build Production Bundle (tsup)
+        run: pnpm build:package
+
+      - name: Package Smoke Test (Isolated Tarball Install & Validation)
+        run: pnpm package:smoke
+
+      - name: Validate NPM Packaging (dry-run)
+        run: npm pack --dry-run
+
+      - name: Upload Plugin Binary Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: roview-plugin
+          path: |
+            roview-plugin.rbxm
+            dist/assets/roview-plugin.rbxm
+          retention-days: 14

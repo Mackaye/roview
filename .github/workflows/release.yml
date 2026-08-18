@@ -1,0 +1,89 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - "v*.*.*"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  packages: write
+  id-token: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 10
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - name: Setup Aftman toolchain (Rojo, Selene, StyLua)
+        uses: ok-nick/setup-aftman@v0.4.2
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Typecheck & Run Tests
+        run: |
+          pnpm build
+          pnpm test
+
+      - name: Check & Format Luau
+        run: |
+          pnpm check:luau
+          pnpm format:luau
+
+      - name: Build Studio Plugin Binary
+        run: pnpm build:plugin
+
+      - name: Build Production Bundle (tsup)
+        run: pnpm build:package
+
+      - name: Validate Package Bundle (Smoke Test)
+        run: pnpm package:smoke
+
+      - name: Publish to GitHub Packages (@mackaye/roview)
+        run: |
+          echo "@mackaye:registry=https://npm.pkg.github.com" > .npmrc
+          echo "//npm.pkg.github.com/:_authToken=${NODE_AUTH_TOKEN}" >> .npmrc
+          npm publish || echo "Package version already published to GitHub Packages or publish skipped."
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ startsWith(github.ref, 'refs/tags/') && github.ref_name || 'v0.1.0' }}
+          files: |
+            roview-plugin.rbxm
+            dist/assets/roview-plugin.rbxm
+          generate_release_notes: true
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Publish to Public NPM (@mackaye/roview)
+        if: env.NPM_TOKEN != ''
+        continue-on-error: true
+        run: |
+          echo "//registry.npmjs.org/:_authToken=${NODE_AUTH_TOKEN}" > .npmrc
+          npm publish --access public --provenance || echo "Public npm publish skipped or failed."
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+          NPM_TOKEN: ${{ secrets.NPM_TOKEN }}

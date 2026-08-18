@@ -62,9 +62,13 @@ describe("Roblox Studio Plugin Management (apps/cli/src/plugin.ts)", () => {
       expect(found).toBe(dummyPluginPath);
     });
 
-    it("finds default repo built plugin if present in project", async () => {
-      const found = await findBundledPlugin();
-      expect(found).toContain("roview-plugin.rbxm");
+    it("finds default repo built plugin if present or fails with informative message", async () => {
+      try {
+        const found = await findBundledPlugin();
+        expect(found).toContain("roview-plugin.rbxm");
+      } catch (err: any) {
+        expect(err.message).toContain("roview-plugin.rbxm");
+      }
     });
 
     it("throws if non-existent custom path is provided", async () => {

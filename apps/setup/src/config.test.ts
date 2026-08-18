@@ -41,6 +41,22 @@ describe("dual MCP onboarding configuration", () => {
         },
       },
     });
+
+    expect(generateMcpConfiguration({
+      mode: "companion",
+      projectRoot: "/workspace/roview",
+      platform: "linux",
+      environment: { ROBLOX_STUDIO_MCP_PATH: "/usr/local/bin/roblox-mcp" },
+    })).toEqual({
+      mcpServers: {
+        Roblox_Studio: { command: "/usr/local/bin/roblox-mcp" },
+        roview: {
+          command: "pnpm",
+          args: ["--dir", "/workspace/roview", "mcp"],
+          env: { ROVIEW_URL: "http://127.0.0.1:3219" },
+        },
+      },
+    });
   });
 
 

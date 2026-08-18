@@ -44,7 +44,7 @@ const officialStudioEntry = (
     if (!localAppData) throw new Error("LOCALAPPDATA is required to configure Roblox Studio MCP on Windows");
     return { command: "cmd.exe", args: ["/c", `${localAppData}\\Roblox\\mcp.bat`] };
   }
-  throw new Error("Automatic Roblox Studio MCP configuration currently supports macOS and Windows");
+  return { command: environment.ROBLOX_STUDIO_MCP_PATH ?? "roblox-studio-mcp" };
 };
 
 export function generateMcpConfiguration(options: GenerateConfigurationOptions): McpConfiguration {
