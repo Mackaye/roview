@@ -1,0 +1,24 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" fill="none">
+  <rect width="32" height="32" rx="7" fill="#14171a"/>
+  <!-- Glowing shield outline -->
+  <path d="M16 4L26 8.5V16.5C26 22 21.5 26.5 16 28C10.5 26.5 6 22 6 16.5V8.5L16 4Z" 
+        stroke="url(#shield-grad)" stroke-width="2" stroke-linejoin="round" fill="#181c20" fill-opacity="0.8"/>
+  <!-- Tilted Roblox block -->
+  <rect x="12" y="12" width="8" height="8" rx="1.5" 
+        transform="rotate(-15 16 16)" 
+        fill="url(#cube-grad)" stroke="#58a6ff" stroke-width="1"/>
+  <!-- Inner cutout hole -->
+  <rect x="14.5" y="14.5" width="3" height="3" rx="0.5" 
+        transform="rotate(-15 16 16)" 
+        fill="#14171a"/>
+  <defs>
+    <linearGradient id="shield-grad" x1="6" y1="4" x2="26" y2="28" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#58a6ff"/>
+      <stop offset="1" stop-color="#2ea043"/>
+    </linearGradient>
+    <linearGradient id="cube-grad" x1="12" y1="12" x2="20" y2="20" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#79c0ff"/>
+      <stop offset="1" stop-color="#56d364"/>
+    </linearGradient>
+  </defs>
+</svg>
