@@ -1,0 +1,32 @@
+{
+  "name": "RoviewDemo",
+  "tree": {
+    "$className": "DataModel",
+    "ReplicatedStorage": {
+      "$className": "ReplicatedStorage",
+      "Remotes": {
+        "$className": "Folder"
+      }
+    },
+    "ServerScriptService": {
+      "$className": "ServerScriptService",
+      "DailyRewardsService": {
+        "$path": "src/ServerScriptService/DailyRewardsService.luau"
+      }
+    },
+    "StarterGui": {
+      "$className": "StarterGui",
+      "Rewards": {
+        "$className": "ScreenGui",
+        "ClaimButton": {
+          "$className": "TextButton",
+          "$properties": {
+            "BackgroundColor3": [0.16, 0.18, 0.2],
+            "Size": { "UDim2": [[0, 220], [0, 48]] },
+            "Text": "Claim daily reward"
+          }
+        }
+      }
+    }
+  }
+}
