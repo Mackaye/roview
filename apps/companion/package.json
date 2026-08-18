@@ -1,0 +1,9 @@
+{
+  "name": "@roview/companion",
+  "version": "0.1.0-draft.0",
+  "private": true,
+  "type": "module",
+  "dependencies": {
+    "@roview/protocol": "workspace:*"
+  }
+}

@@ -1,0 +1,311 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Roview — Change Review IDE</title>
+    <link rel="stylesheet" href="/styles.css" />
+  </head>
+  <body>
+    <div class="app-shell">
+      <header class="topbar">
+        <a class="brand" href="/" aria-label="Roview home">
+          <span class="brand-mark" aria-hidden="true"><i></i><i></i></span>
+          <span>Roview</span>
+        </a>
+        <span class="version">v0.2 draft</span>
+        <span class="mode-badge">Review IDE</span>
+        <span class="breadcrumb" id="breadcrumb">Local proposal</span>
+        <div class="top-actions">
+          <div class="view-toggle" aria-label="Diff view">
+            <button id="split-view" class="active" title="Side-by-side split diff (s)">Split</button>
+            <button id="unified-view" title="Unified unified diff (s)">Unified</button>
+          </div>
+          <button id="plan-style-toggle" class="quiet-button" title="Toggle Grid / Clean plan style">🎨 View Style</button>
+          <button id="shortcuts-toggle" class="quiet-button" title="View keyboard shortcuts (?)">⌨️ Shortcuts</button>
+          <button id="onboarding-toggle" class="quiet-button" title="View review tools overview">✨ What's New</button>
+          <button id="copy-diff" class="quiet-button" title="Copy raw unified diff">Copy raw diff</button>
+          <button id="request-changes" class="review-button" title="Send structured feedback to agent (r)">Send Feedback</button>
+          <button id="reject" class="reject-button" title="Reject proposal (x)">Reject</button>
+          <button id="approve" class="approve-button" title="Approve for Studio preflight (a)">Approve</button>
+        </div>
+      </header>
+
+      <aside class="files-pane">
+        <div class="pane-title">
+          <span>Explorer</span>
+          <span id="change-count" class="change-count-badge">0/0</span>
+        </div>
+        <div class="proposal-select">
+          <label for="proposal-picker">Proposal</label>
+          <select id="proposal-picker" aria-label="Proposal"></select>
+        </div>
+        <div class="review-summary" id="review-summary"></div>
+        <div class="revision-summary" id="revision-summary" hidden></div>
+        <div class="preflight-alert" id="preflight-alert" hidden></div>
+        <nav id="change-tree" class="change-tree" aria-label="Proposed changes"></nav>
+
+        <div class="files-footer"><span class="connection-dot" id="connection-dot"></span><span id="connection-label">Live Sync Active</span></div>
+      </aside>
+
+
+      <main class="diff-pane" id="diff-pane-container">
+        <section id="auth-state" class="center-state">
+          <div class="state-icon">RV</div>
+          <h1>Opening local review…</h1>
+          <p>Proposal content stays on this machine.</p>
+        </section>
+        <section id="review-workspace" hidden>
+          <div class="ide-tab-bar" id="ide-tab-bar">
+            <div class="ide-tab" id="active-tab">
+              <span class="ide-tab-icon" id="active-tab-icon">📜</span>
+              <span id="active-tab-label">AuthService.luau</span>
+              <span class="ide-tab-status" id="active-tab-status">M</span>
+            </div>
+          </div>
+          <header class="change-header">
+            <div class="change-header-left">
+              <span id="change-kind" class="change-kind"></span>
+              <h1 id="change-path"></h1>
+            </div>
+            <div class="change-tools">
+              <span id="change-stats"></span>
+              <button id="viewed-toggle" class="quiet-button" title="Mark file as reviewed (v)">○ Mark viewed</button>
+            </div>
+          </header>
+          <div id="context-bar" class="context-bar"></div>
+          <div id="diff-content" class="diff-content"></div>
+        </section>
+
+        <!-- Floating In-Line Comment Popover -->
+        <div id="inline-comment-popover" class="inline-popover" hidden>
+          <div class="inline-popover-header">
+            <span id="inline-popover-header"></span>
+            <button id="inline-popover-close" class="close-btn" aria-label="Close">&times;</button>
+          </div>
+          <textarea id="inline-comment-body" rows="3" placeholder="Leave inline feedback or suggest code…"></textarea>
+          <div class="inline-quick-bar">
+            <button id="btn-quick-suggest" type="button" class="inline-quick-btn">+ Add suggestion</button>
+            <button id="btn-quick-revert" type="button" class="inline-quick-btn">Revert this</button>
+            <button id="btn-quick-optimize" type="button" class="inline-quick-btn">Refactor/Optimize</button>
+          </div>
+          <div class="inline-popover-actions">
+            <button id="inline-cancel-comment" type="button" class="quiet-button">Cancel</button>
+            <button id="inline-add-comment" type="button" class="approve-button">Add Comment</button>
+          </div>
+        </div>
+      </main>
+
+      <aside class="annotations-pane">
+        <div class="pane-title">
+          <span>Annotations</span>
+          <span id="annotation-count" class="annotation-count">0</span>
+        </div>
+        <div id="annotation-empty" class="annotation-empty">
+          <div class="comment-glyph">+</div>
+          <p>Click a line number or drag to select a range, then leave anchored feedback.</p>
+        </div>
+        <div id="annotation-list" class="annotation-list"></div>
+        <section id="comment-composer" class="comment-composer" hidden>
+          <div class="composer-anchor" id="composer-anchor"></div>
+          <textarea id="comment-body" rows="4" placeholder="Leave a comment"></textarea>
+          <div class="composer-actions">
+            <button id="cancel-comment" class="quiet-button">Cancel</button>
+            <button id="add-comment" class="approve-button">Add comment</button>
+          </div>
+        </section>
+        <div class="general-note">
+          <label for="general-comment">Overall review note</label>
+          <textarea id="general-comment" rows="3" placeholder="Feedback about the proposal as a whole…"></textarea>
+        </div>
+        <details class="feedback-preview">
+          <summary>▸ Agent feedback preview</summary>
+          <pre id="feedback-preview"></pre>
+        </details>
+        <div id="previous-feedback" class="previous-feedback" hidden></div>
+        <div id="decision-state" class="decision-state">
+          Approval permits Studio preflight. Nothing is applied from this page.
+        </div>
+      </aside>
+
+      <!-- Bottom Studio Status Bar -->
+      <footer class="status-bar">
+        <div class="status-bar-item">
+          <span class="connection-dot"></span>
+          <span id="status-connection">Local Companion</span>
+        </div>
+        <div class="status-bar-item" id="status-selection-info">
+          <span>Ready</span>
+        </div>
+        <div class="status-bar-right">
+          <div class="status-bar-item">
+            <span id="status-lang">Luau</span>
+          </div>
+          <div class="status-bar-item">
+            <span>UTF-8</span>
+          </div>
+          <div class="status-bar-item">
+            <span>4 Spaces</span>
+          </div>
+          <div class="status-bar-item clickable" id="status-shortcuts-btn" title="Keyboard Shortcuts (?)">
+            <span>⌨️ Cheatsheet</span>
+          </div>
+        </div>
+      </footer>
+    </div>
+
+    <!-- Modal: Choose How Plans Look -->
+    <div id="modal-plan-style" class="modal-backdrop" hidden>
+      <div class="modal-card">
+        <div class="modal-header">
+          <h2>Choose how plans look</h2>
+          <p>Pick a starting view. You can change it anytime in Settings.</p>
+        </div>
+        <div class="plan-options-grid">
+          <div class="plan-option-card active" data-style="grid">
+            <div class="preview-box grid-preview">
+              <div class="preview-mini-doc">
+                <div class="mini-title"></div>
+                <div class="mini-lines"><span></span><span></span><span></span></div>
+              </div>
+            </div>
+            <div class="option-info">
+              <div class="option-title-row">
+                <span class="option-title">Grid</span>
+                <span class="radio-indicator"></span>
+              </div>
+              <span class="option-desc">A floating plan card on grid paper.</span>
+            </div>
+          </div>
+          <div class="plan-option-card" data-style="clean">
+            <div class="preview-box clean-preview">
+              <div class="preview-mini-doc clean-doc">
+                <div class="mini-title"></div>
+                <div class="mini-lines"><span></span><span></span><span></span></div>
+              </div>
+            </div>
+            <div class="option-info">
+              <div class="option-title-row">
+                <span class="option-title">Clean</span>
+                <span class="radio-indicator"></span>
+              </div>
+              <span class="option-desc">A simple, edge-to-edge document.</span>
+            </div>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button id="btn-save-plan-style" class="modal-primary-btn">Continue</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Modal: Feature Onboarding -->
+    <div id="modal-onboarding" class="modal-backdrop" hidden>
+      <div class="modal-card onboarding-card">
+        <div class="pill-badge">STUDIO REVIEW IDE</div>
+        <div class="modal-header">
+          <h2>Roblox Studio Review Experience</h2>
+          <p>A full review workspace with Luau syntax highlighting, multi-line comment anchoring, and instant feedback.</p>
+        </div>
+        <div class="onboarding-split">
+          <div class="onboarding-demo">
+            <div class="demo-diff-window">
+              <div class="demo-line del">− local service = auth.get()</div>
+              <div class="demo-line add">+ local service = auth.getValidated()</div>
+              <div class="demo-comment-box">
+                <span>After · Line 4</span>
+                <div class="demo-comment-text">Use validated auth here.</div>
+              </div>
+            </div>
+          </div>
+          <div class="onboarding-features">
+            <div class="feature-item">
+              <span class="feature-icon">✨</span>
+              <div>
+                <strong>Luau Syntax Highlighting</strong>
+                <p>Full Roblox Studio syntax highlighting for keywords, types, globals, and methods.</p>
+              </div>
+            </div>
+            <div class="feature-item">
+              <span class="feature-icon">✏️</span>
+              <div>
+                <strong>Multi-line Range Comments</strong>
+                <p>Drag across lines in the diff to anchor feedback to a range.</p>
+              </div>
+            </div>
+            <div class="feature-item">
+              <span class="feature-icon">💡</span>
+              <div>
+                <strong>Quick Code Suggestions</strong>
+                <p>Click "+ Add suggestion" to write replacement code blocks.</p>
+              </div>
+            </div>
+            <div class="feature-item">
+              <span class="feature-icon">⌨️</span>
+              <div>
+                <strong>Keyboard Shortcuts</strong>
+                <p>Use J/K to browse files, S to toggle split/unified, A to approve, and R to request changes.</p>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="modal-footer split-footer">
+          <span class="footer-hint">Change styles anytime via View Style</span>
+          <button id="btn-close-onboarding" class="modal-primary-btn">Done</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Modal: Keyboard Shortcuts -->
+    <div id="modal-shortcuts" class="modal-backdrop" hidden>
+      <div class="modal-card">
+        <div class="modal-header">
+          <h2>Keyboard Shortcuts</h2>
+          <p>Navigate and review code proposals at full speed.</p>
+        </div>
+        <div class="shortcuts-grid">
+          <div class="shortcut-row">
+            <span>Next File</span>
+            <kbd class="shortcut-key">J / ↓</kbd>
+          </div>
+          <div class="shortcut-row">
+            <span>Previous File</span>
+            <kbd class="shortcut-key">K / ↑</kbd>
+          </div>
+          <div class="shortcut-row">
+            <span>Toggle Split / Unified</span>
+            <kbd class="shortcut-key">S</kbd>
+          </div>
+          <div class="shortcut-row">
+            <span>Mark Viewed</span>
+            <kbd class="shortcut-key">V</kbd>
+          </div>
+          <div class="shortcut-row">
+            <span>Approve Proposal</span>
+            <kbd class="shortcut-key">A</kbd>
+          </div>
+          <div class="shortcut-row">
+            <span>Send Feedback / Request Changes</span>
+            <kbd class="shortcut-key">R</kbd>
+          </div>
+          <div class="shortcut-row">
+            <span>Reject Proposal</span>
+            <kbd class="shortcut-key">X</kbd>
+          </div>
+          <div class="shortcut-row">
+            <span>Close Modal / Popover</span>
+            <kbd class="shortcut-key">Esc</kbd>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button id="btn-close-shortcuts" class="modal-primary-btn">Close</button>
+        </div>
+      </div>
+    </div>
+
+    <div id="toast" class="toast" role="status" aria-live="polite"></div>
+    <script type="module" src="/app.js"></script>
+  </body>
+</html>
+
+
