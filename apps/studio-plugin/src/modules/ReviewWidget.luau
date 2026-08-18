@@ -1377,14 +1377,15 @@ function ReviewWidget:renderInlineCommentCard(
 	parent: Instance,
 	ann: LineAnnotation,
 	layoutOrder: number?,
-	side: string?
+	side: string?,
+	isSplit: boolean?
 )
 	local card = Instance.new("Frame")
 	card.BackgroundColor3 = COLORS.commentBg
 	card.BorderSizePixel = 1
 	card.BorderColor3 = COLORS.commentBorder
 	card.LayoutOrder = layoutOrder or 0
-	card.Size = UDim2.new(1, -16, 0, 56)
+	card.Size = if isSplit then UDim2.new(1, -8, 0, 56) else UDim2.new(1, -16, 0, 56)
 	card.Parent = parent
 	corner(card, 5)
 	padding(card, 6)
@@ -1839,21 +1840,61 @@ function ReviewWidget:renderActiveItem()
 			-- Render inline comment cards if any exist
 			local lineBefore = if pair.before then pair.before.line else nil
 			local lineAfter = if pair.after then pair.after.line else nil
-			local comments = {}
-			if lineBefore then
-				for _, c in self:getAnnotationsForLine(op.id, lineBefore, "before") do
-					table.insert(comments, c)
+			local beforeComments = if lineBefore then self:getAnnotationsForLine(op.id, lineBefore, "before") else {}
+			local afterComments = if lineAfter then self:getAnnotationsForLine(op.id, lineAfter, "after") else {}
+
+			if #beforeComments > 0 or #afterComments > 0 then
+				local commentRow = Instance.new("Frame")
+				commentRow.BackgroundTransparency = 1
+				commentRow.BorderSizePixel = 0
+				commentRow.LayoutOrder = (index * 10) + 1
+				local maxCount = math.max(#beforeComments, #afterComments)
+				commentRow.Size = UDim2.new(1, 0, 0, maxCount * 62)
+				commentRow.Parent = self.editorScroll
+
+				-- Left Cell (Before)
+				local leftCommentCell = Instance.new("Frame")
+				leftCommentCell.BorderSizePixel = 0
+				leftCommentCell.Position = UDim2.fromScale(0, 0)
+				leftCommentCell.Size = UDim2.new(0.5, -1, 1, 0)
+				leftCommentCell.BackgroundColor3 = if #beforeComments > 0 then COLORS.canvas else COLORS.subtle
+				leftCommentCell.Parent = commentRow
+				padding(leftCommentCell, 3)
+
+				local leftList = Instance.new("UIListLayout")
+				leftList.SortOrder = Enum.SortOrder.LayoutOrder
+				leftList.Padding = UDim.new(0, 4)
+				leftList.Parent = leftCommentCell
+
+				for cIdx, c in beforeComments do
+					self:renderInlineCommentCard(leftCommentCell, c, cIdx, "before", true)
 				end
-			end
-			if lineAfter then
-				for _, c in self:getAnnotationsForLine(op.id, lineAfter, "after") do
-					table.insert(comments, c)
+
+				-- Divider
+				local splitDivider = Instance.new("Frame")
+				splitDivider.BackgroundColor3 = COLORS.rule
+				splitDivider.BorderSizePixel = 0
+				splitDivider.Position = UDim2.new(0.5, -1, 0, 0)
+				splitDivider.Size = UDim2.new(0, 1, 1, 0)
+				splitDivider.Parent = commentRow
+
+				-- Right Cell (After)
+				local rightCommentCell = Instance.new("Frame")
+				rightCommentCell.BorderSizePixel = 0
+				rightCommentCell.Position = UDim2.fromScale(0.5, 0)
+				rightCommentCell.Size = UDim2.fromScale(0.5, 1)
+				rightCommentCell.BackgroundColor3 = if #afterComments > 0 then COLORS.canvas else COLORS.subtle
+				rightCommentCell.Parent = commentRow
+				padding(rightCommentCell, 3)
+
+				local rightList = Instance.new("UIListLayout")
+				rightList.SortOrder = Enum.SortOrder.LayoutOrder
+				rightList.Padding = UDim.new(0, 4)
+				rightList.Parent = rightCommentCell
+
+				for cIdx, c in afterComments do
+					self:renderInlineCommentCard(rightCommentCell, c, cIdx, "after", true)
 				end
-			end
-			local cIndex = 1
-			for _, c in comments do
-				self:renderInlineCommentCard(self.editorScroll, c, (index * 10) + cIndex, c.side)
-				cIndex += 1
 			end
 		end
 	else
