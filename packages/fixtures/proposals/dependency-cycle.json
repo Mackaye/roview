@@ -1,0 +1,14 @@
+{
+  "protocolVersion": "0.1",
+  "proposalId": "dependency_cycle",
+  "revision": 1,
+  "title": "Dependency cycle",
+  "summary": "Must be rejected before Studio.",
+  "createdAt": "2026-08-17T08:05:00.000Z",
+  "producer": { "name": "fixture", "version": "0.1" },
+  "plan": { "format": "plain", "content": "Exercise cycle rejection." },
+  "operations": [
+    { "id": "a", "kind": "createInstance", "target": { "parent": { "path": ["ReplicatedStorage"] }, "className": "Folder", "name": "A" }, "preconditions": { "nameCollision": "fail" }, "dependsOn": ["b"] },
+    { "id": "b", "kind": "createInstance", "target": { "parent": { "path": ["ReplicatedStorage"] }, "className": "Folder", "name": "B" }, "preconditions": { "nameCollision": "fail" }, "dependsOn": ["a"] }
+  ]
+}

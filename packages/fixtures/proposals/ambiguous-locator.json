@@ -1,0 +1,18 @@
+{
+  "protocolVersion": "0.1",
+  "proposalId": "ambiguous_locator",
+  "revision": 1,
+  "title": "Ambiguous target probe",
+  "summary": "Valid protocol whose runtime tree deliberately contains duplicate siblings.",
+  "createdAt": "2026-08-17T08:01:00.000Z",
+  "producer": { "name": "fixture", "version": "0.1" },
+  "plan": { "format": "plain", "content": "Confirm the locator fails closed." },
+  "operations": [{
+    "id": "ambiguous",
+    "kind": "setProperty",
+    "target": { "path": ["ReplicatedStorage", "Duplicate", "Flag"], "className": "BoolValue" },
+    "property": "Value",
+    "before": { "type": "boolean", "value": false },
+    "after": { "type": "boolean", "value": true }
+  }]
+}

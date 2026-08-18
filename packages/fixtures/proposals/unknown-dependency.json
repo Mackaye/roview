@@ -1,0 +1,17 @@
+{
+  "protocolVersion": "0.1",
+  "proposalId": "unknown_dependency",
+  "revision": 1,
+  "title": "Unknown dependency",
+  "summary": "Must be rejected before Studio.",
+  "createdAt": "2026-08-17T08:06:00.000Z",
+  "producer": { "name": "fixture", "version": "0.1" },
+  "plan": { "format": "plain", "content": "Exercise missing dependency rejection." },
+  "operations": [{
+    "id": "a",
+    "kind": "createInstance",
+    "target": { "parent": { "path": ["ReplicatedStorage"] }, "className": "Folder", "name": "A" },
+    "preconditions": { "nameCollision": "fail" },
+    "dependsOn": ["missing"]
+  }]
+}

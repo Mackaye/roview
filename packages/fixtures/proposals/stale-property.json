@@ -1,0 +1,18 @@
+{
+  "protocolVersion": "0.1",
+  "proposalId": "stale_property",
+  "revision": 1,
+  "title": "Stale property probe",
+  "summary": "Valid proposal whose fixture place has a different current value.",
+  "createdAt": "2026-08-17T08:02:00.000Z",
+  "producer": { "name": "fixture", "version": "0.1" },
+  "plan": { "format": "plain", "content": "Confirm stale properties block all operations." },
+  "operations": [{
+    "id": "stale",
+    "kind": "setProperty",
+    "target": { "path": ["StarterGui", "Rewards", "ClaimButton"], "className": "TextButton" },
+    "property": "Visible",
+    "before": { "type": "boolean", "value": false },
+    "after": { "type": "boolean", "value": true }
+  }]
+}

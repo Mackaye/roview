@@ -1,0 +1,14 @@
+{
+  "protocolVersion": "0.1",
+  "proposalId": "duplicate_operation",
+  "revision": 1,
+  "title": "Duplicate operation",
+  "summary": "Must be rejected before Studio.",
+  "createdAt": "2026-08-17T08:07:00.000Z",
+  "producer": { "name": "fixture", "version": "0.1" },
+  "plan": { "format": "plain", "content": "Exercise duplicate ID rejection." },
+  "operations": [
+    { "id": "same", "kind": "createInstance", "target": { "parent": { "path": ["ReplicatedStorage"] }, "className": "Folder", "name": "A" }, "preconditions": { "nameCollision": "fail" } },
+    { "id": "same", "kind": "createInstance", "target": { "parent": { "path": ["ReplicatedStorage"] }, "className": "Folder", "name": "B" }, "preconditions": { "nameCollision": "fail" } }
+  ]
+}

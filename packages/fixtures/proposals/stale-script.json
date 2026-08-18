@@ -1,0 +1,17 @@
+{
+  "protocolVersion": "0.1",
+  "proposalId": "stale_script",
+  "revision": 1,
+  "title": "Stale script probe",
+  "summary": "Valid proposal whose fixture place source deliberately differs.",
+  "createdAt": "2026-08-17T08:08:00.000Z",
+  "producer": { "name": "fixture", "version": "0.1" },
+  "plan": { "format": "plain", "content": "Confirm current editor source blocks stale apply." },
+  "operations": [{
+    "id": "stale_source",
+    "kind": "replaceScriptSource",
+    "target": { "path": ["ServerScriptService", "DailyRewardsService"], "className": "ModuleScript" },
+    "before": { "sourceSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855", "source": "" },
+    "after": { "source": "-- reviewed replacement\n" }
+  }]
+}

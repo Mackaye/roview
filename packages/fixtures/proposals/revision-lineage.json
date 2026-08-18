@@ -1,0 +1,19 @@
+{
+  "protocolVersion": "0.1",
+  "proposalId": "lineage-fixture",
+  "revision": 2,
+  "previousRevision": 1,
+  "title": "Revise the review plan",
+  "summary": "Links typed operation and plan changes to the exact prior revision.",
+  "createdAt": "2026-08-17T13:00:00.000Z",
+  "producer": { "name": "fixture", "version": "0.2" },
+  "plan": { "format": "plain", "content": "Create the reviewed folder after incorporating revision 1 feedback." },
+  "operations": [
+    {
+      "id": "create_lineage_folder",
+      "kind": "createInstance",
+      "target": { "parent": { "path": ["ReplicatedStorage"] }, "className": "Folder", "name": "LineageFixture" },
+      "preconditions": { "nameCollision": "fail" }
+    }
+  ]
+}

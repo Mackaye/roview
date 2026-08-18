@@ -1,0 +1,18 @@
+{
+  "protocolVersion": "0.1",
+  "proposalId": "unicode_path",
+  "revision": 1,
+  "title": "Update café label",
+  "summary": "Exercises Unicode and emoji locator segments.",
+  "createdAt": "2026-08-17T08:00:00.000Z",
+  "producer": { "name": "fixture", "version": "0.1" },
+  "plan": { "format": "plain", "content": "Update the café label without normalising its path." },
+  "operations": [{
+    "id": "label_é",
+    "kind": "setProperty",
+    "target": { "path": ["StarterGui", "Café ☕", "Label"], "className": "TextLabel" },
+    "property": "Text",
+    "before": { "type": "string", "value": "Récompense" },
+    "after": { "type": "string", "value": "Récompense prête 🎁" }
+  }]
+}

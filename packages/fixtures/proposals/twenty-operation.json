@@ -1,0 +1,32 @@
+{
+  "protocolVersion": "0.1",
+  "proposalId": "twenty_operation",
+  "revision": 1,
+  "title": "Twenty-operation apply and Undo gate",
+  "summary": "Creates twenty deterministic folders for the Phase 1 Studio integration gate.",
+  "createdAt": "2026-08-17T08:09:00.000Z",
+  "producer": { "name": "fixture", "version": "0.1" },
+  "plan": { "format": "plain", "content": "Apply twenty operations in one recording, then Undo once." },
+  "operations": [
+    { "id": "create_01", "kind": "createInstance", "target": { "parent": { "path": ["ReplicatedStorage"] }, "className": "Folder", "name": "RoviewFixture01" }, "preconditions": { "nameCollision": "fail" } },
+    { "id": "create_02", "kind": "createInstance", "target": { "parent": { "path": ["ReplicatedStorage"] }, "className": "Folder", "name": "RoviewFixture02" }, "preconditions": { "nameCollision": "fail" } },
+    { "id": "create_03", "kind": "createInstance", "target": { "parent": { "path": ["ReplicatedStorage"] }, "className": "Folder", "name": "RoviewFixture03" }, "preconditions": { "nameCollision": "fail" } },
+    { "id": "create_04", "kind": "createInstance", "target": { "parent": { "path": ["ReplicatedStorage"] }, "className": "Folder", "name": "RoviewFixture04" }, "preconditions": { "nameCollision": "fail" } },
+    { "id": "create_05", "kind": "createInstance", "target": { "parent": { "path": ["ReplicatedStorage"] }, "className": "Folder", "name": "RoviewFixture05" }, "preconditions": { "nameCollision": "fail" } },
+    { "id": "create_06", "kind": "createInstance", "target": { "parent": { "path": ["ReplicatedStorage"] }, "className": "Folder", "name": "RoviewFixture06" }, "preconditions": { "nameCollision": "fail" } },
+    { "id": "create_07", "kind": "createInstance", "target": { "parent": { "path": ["ReplicatedStorage"] }, "className": "Folder", "name": "RoviewFixture07" }, "preconditions": { "nameCollision": "fail" } },
+    { "id": "create_08", "kind": "createInstance", "target": { "parent": { "path": ["ReplicatedStorage"] }, "className": "Folder", "name": "RoviewFixture08" }, "preconditions": { "nameCollision": "fail" } },
+    { "id": "create_09", "kind": "createInstance", "target": { "parent": { "path": ["ReplicatedStorage"] }, "className": "Folder", "name": "RoviewFixture09" }, "preconditions": { "nameCollision": "fail" } },
+    { "id": "create_10", "kind": "createInstance", "target": { "parent": { "path": ["ReplicatedStorage"] }, "className": "Folder", "name": "RoviewFixture10" }, "preconditions": { "nameCollision": "fail" } },
+    { "id": "create_11", "kind": "createInstance", "target": { "parent": { "path": ["ReplicatedStorage"] }, "className": "Folder", "name": "RoviewFixture11" }, "preconditions": { "nameCollision": "fail" } },
+    { "id": "create_12", "kind": "createInstance", "target": { "parent": { "path": ["ReplicatedStorage"] }, "className": "Folder", "name": "RoviewFixture12" }, "preconditions": { "nameCollision": "fail" } },
+    { "id": "create_13", "kind": "createInstance", "target": { "parent": { "path": ["ReplicatedStorage"] }, "className": "Folder", "name": "RoviewFixture13" }, "preconditions": { "nameCollision": "fail" } },
+    { "id": "create_14", "kind": "createInstance", "target": { "parent": { "path": ["ReplicatedStorage"] }, "className": "Folder", "name": "RoviewFixture14" }, "preconditions": { "nameCollision": "fail" } },
+    { "id": "create_15", "kind": "createInstance", "target": { "parent": { "path": ["ReplicatedStorage"] }, "className": "Folder", "name": "RoviewFixture15" }, "preconditions": { "nameCollision": "fail" } },
+    { "id": "create_16", "kind": "createInstance", "target": { "parent": { "path": ["ReplicatedStorage"] }, "className": "Folder", "name": "RoviewFixture16" }, "preconditions": { "nameCollision": "fail" } },
+    { "id": "create_17", "kind": "createInstance", "target": { "parent": { "path": ["ReplicatedStorage"] }, "className": "Folder", "name": "RoviewFixture17" }, "preconditions": { "nameCollision": "fail" } },
+    { "id": "create_18", "kind": "createInstance", "target": { "parent": { "path": ["ReplicatedStorage"] }, "className": "Folder", "name": "RoviewFixture18" }, "preconditions": { "nameCollision": "fail" } },
+    { "id": "create_19", "kind": "createInstance", "target": { "parent": { "path": ["ReplicatedStorage"] }, "className": "Folder", "name": "RoviewFixture19" }, "preconditions": { "nameCollision": "fail" } },
+    { "id": "create_20", "kind": "createInstance", "target": { "parent": { "path": ["ReplicatedStorage"] }, "className": "Folder", "name": "RoviewFixture20" }, "preconditions": { "nameCollision": "fail" } }
+  ]
+}

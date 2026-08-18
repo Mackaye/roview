@@ -1,0 +1,16 @@
+{
+  "protocolVersion": "0.1",
+  "proposalId": "unsupported_class",
+  "revision": 1,
+  "title": "Unsupported class",
+  "summary": "Must be rejected before Studio.",
+  "createdAt": "2026-08-17T08:03:00.000Z",
+  "producer": { "name": "fixture", "version": "0.1" },
+  "plan": { "format": "plain", "content": "Attempt an unsupported creation." },
+  "operations": [{
+    "id": "bad",
+    "kind": "createInstance",
+    "target": { "parent": { "path": ["Workspace"] }, "className": "Script", "name": "Arbitrary" },
+    "preconditions": { "nameCollision": "fail" }
+  }]
+}

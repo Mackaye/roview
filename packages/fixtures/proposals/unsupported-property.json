@@ -1,0 +1,18 @@
+{
+  "protocolVersion": "0.1",
+  "proposalId": "unsupported_property",
+  "revision": 1,
+  "title": "Unsupported property",
+  "summary": "Must be rejected before Studio.",
+  "createdAt": "2026-08-17T08:04:00.000Z",
+  "producer": { "name": "fixture", "version": "0.1" },
+  "plan": { "format": "plain", "content": "Attempt an unreviewed property." },
+  "operations": [{
+    "id": "bad",
+    "kind": "setProperty",
+    "target": { "path": ["Workspace", "Part"], "className": "Part" },
+    "property": "CFrame",
+    "before": { "type": "string", "value": "opaque" },
+    "after": { "type": "string", "value": "opaque" }
+  }]
+}

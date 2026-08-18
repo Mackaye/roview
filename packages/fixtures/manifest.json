@@ -1,0 +1,14 @@
+{
+  "daily-reward.json": { "valid": true },
+  "revision-lineage.json": { "valid": true },
+  "unicode-path.json": { "valid": true },
+  "ambiguous-locator.json": { "valid": true, "studioExpectation": "preflight-conflicted" },
+  "stale-property.json": { "valid": true, "studioExpectation": "preflight-conflicted" },
+  "stale-script.json": { "valid": true, "studioExpectation": "preflight-conflicted" },
+  "twenty-operation.json": { "valid": true, "studioExpectation": "apply-and-single-undo" },
+  "unsupported-class.json": { "valid": false, "errorIncludes": "className is not allowed" },
+  "unsupported-property.json": { "valid": false, "errorIncludes": "property is not allowed" },
+  "dependency-cycle.json": { "valid": false, "errorIncludes": "must not contain a cycle" },
+  "unknown-dependency.json": { "valid": false, "errorIncludes": "unknown dependency" },
+  "duplicate-operation.json": { "valid": false, "errorIncludes": "operation IDs must be unique" }
+}

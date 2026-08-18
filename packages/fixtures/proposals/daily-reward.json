@@ -1,0 +1,129 @@
+{
+  "protocolVersion": "0.1",
+  "proposalId": "demo_daily_reward",
+  "revision": 1,
+  "title": "Implement Production Daily Rewards System & UI",
+  "summary": "Adds server-authoritative streak calculation, cooldowns, network remotes, reward notification event, and visual claim button upgrades.",
+  "createdAt": "2026-08-17T21:43:05.918Z",
+  "producer": {
+    "name": "roview-agent",
+    "version": "1.0.0"
+  },
+  "plan": {
+    "format": "markdown",
+    "content": "# Daily Rewards & Streak System Implementation Plan\n\n## Overview\nUpgrade the placeholder daily rewards system into a full, server-authoritative progression feature.\n\n### Key Changes\n1. **Network Remotes**: Add `ClaimDailyReward` and `RewardNotification` RemoteEvents under `ReplicatedStorage.Remotes`.\n2. **Server Business Logic (`DailyRewardsService`)**:\n   - 24-hour cooldown enforcement with accurate time remaining feedback.\n   - 48-hour grace window for streak resets.\n   - Progressive coin payout with +25% per consecutive day (capped at 7 days).\n   - Day 7 milestone bonus: +10 Gems.\n   - Leaderstats integration and client notification broadcast.\n3. **UI Enhancements**:\n   - Upgrade `ClaimButton` styling with reviewed amber accent and updated CTA text."
+  },
+  "operations": [
+    {
+      "id": "op_create_claim_remote",
+      "kind": "createInstance",
+      "target": {
+        "parent": {
+          "path": [
+            "ReplicatedStorage",
+            "Remotes"
+          ],
+          "className": "Folder"
+        },
+        "className": "RemoteEvent",
+        "name": "ClaimDailyReward"
+      },
+      "preconditions": {
+        "parentClass": "Folder",
+        "nameCollision": "fail"
+      },
+      "rationale": "Network trigger for client claim requests."
+    },
+    {
+      "id": "op_create_notif_remote",
+      "kind": "createInstance",
+      "target": {
+        "parent": {
+          "path": [
+            "ReplicatedStorage",
+            "Remotes"
+          ],
+          "className": "Folder"
+        },
+        "className": "RemoteEvent",
+        "name": "RewardNotification"
+      },
+      "preconditions": {
+        "parentClass": "Folder",
+        "nameCollision": "fail"
+      },
+      "rationale": "Broadcasts reward payloads and milestone animations to clients."
+    },
+    {
+      "id": "op_update_rewards_service",
+      "kind": "replaceScriptSource",
+      "target": {
+        "path": [
+          "ServerScriptService",
+          "DailyRewardsService"
+        ],
+        "className": "ModuleScript"
+      },
+      "before": {
+        "sourceSha256": "b238d24374e97f10246bfa35af0bd12a466924bbf24dc332d7f815bf44b7bae7",
+        "source": "--!strict\nlocal Players = game:GetService(\"Players\")\n\nlocal DailyRewardsService = {\n\tcooldownHours = 24,\n\tbaseCoins = 100,\n}\n\nfunction DailyRewardsService.getStreak(player: Player): number\n\treturn player:GetAttribute(\"RewardStreak\") or 1\nend\n\nfunction DailyRewardsService.canClaim(player: Player): boolean\n\tlocal lastClaim = player:GetAttribute(\"LastRewardClaim\") or 0\n\treturn (os.time() - lastClaim) >= (DailyRewardsService.cooldownHours * 3600)\nend\n\nreturn DailyRewardsService\n"
+      },
+      "after": {
+        "source": "--!strict\nlocal HttpService = game:GetService(\"HttpService\")\nlocal Players = game:GetService(\"Players\")\nlocal ReplicatedStorage = game:GetService(\"ReplicatedStorage\")\n\nlocal DailyRewardsService = {\n\tcooldownHours = 24,\n\tgracePeriodHours = 48,\n\tbaseCoins = 100,\n\tstreakMultiplier = 1.25,\n\tmaxStreak = 7,\n}\n\nlocal Remotes = ReplicatedStorage:WaitForChild(\"Remotes\")\nlocal ClaimRemote = Remotes:WaitForChild(\"ClaimDailyReward\") :: RemoteEvent\nlocal NotificationRemote = Remotes:WaitForChild(\"RewardNotification\") :: RemoteEvent\n\n-- Calculates the streak bonus given current consecutive days logged in\nfunction DailyRewardsService.calculatePayout(streak: number): (number, number)\n\tlocal clampedStreak = math.clamp(streak, 1, DailyRewardsService.maxStreak)\n\tlocal totalCoins = math.floor(DailyRewardsService.baseCoins * (1 + (clampedStreak - 1) * 0.25))\n\tlocal bonusGems = if clampedStreak >= 7 then 10 else 0\n\treturn totalCoins, bonusGems\nend\n\nfunction DailyRewardsService.getStreak(player: Player): number\n\tlocal streak = player:GetAttribute(\"RewardStreak\")\n\treturn if typeof(streak) == \"number\" then streak else 1\nend\n\nfunction DailyRewardsService.canClaim(player: Player): (boolean, number)\n\tlocal lastClaim = player:GetAttribute(\"LastRewardClaim\") or 0\n\tlocal elapsed = os.time() - lastClaim\n\tlocal cooldownSeconds = DailyRewardsService.cooldownHours * 3600\n\tif elapsed >= cooldownSeconds then\n\t\treturn true, 0\n\tend\n\treturn false, cooldownSeconds - elapsed\nend\n\nfunction DailyRewardsService.claim(player: Player): (boolean, string, number)\n\tlocal eligible, remainingSeconds = DailyRewardsService.canClaim(player)\n\tif not eligible then\n\t\treturn false, `Reward is on cooldown. Try again in ${math.ceil(remainingSeconds / 60)} minutes.`, 0\n\tend\n\n\tlocal lastClaim = player:GetAttribute(\"LastRewardClaim\") or 0\n\tlocal elapsed = os.time() - lastClaim\n\tlocal currentStreak = DailyRewardsService.getStreak(player)\n\n\t-- Reset streak if player missed the 48h grace window\n\tlocal newStreak = if lastClaim > 0 and elapsed > (DailyRewardsService.gracePeriodHours * 3600)\n\t\tthen 1\n\t\telse math.min(currentStreak + 1, DailyRewardsService.maxStreak)\n\n\tlocal coins, gems = DailyRewardsService.calculatePayout(newStreak)\n\n\t-- Persist session attributes\n\tplayer:SetAttribute(\"LastRewardClaim\", os.time())\n\tplayer:SetAttribute(\"RewardStreak\", newStreak)\n\n\tlocal leaderstats = player:FindFirstChild(\"leaderstats\")\n\tif leaderstats then\n\t\tlocal coinsVal = leaderstats:FindFirstChild(\"Coins\") :: IntValue?\n\t\tif coinsVal then\n\t\t\tcoinsVal.Value += coins\n\t\tend\n\tend\n\n\tNotificationRemote:FireClient(player, {\n\t\ttype = \"DAILY_REWARD_CLAIMED\",\n\t\tcoins = coins,\n\t\tgems = gems,\n\t\tstreak = newStreak,\n\t\tclaimedAt = os.time(),\n\t})\n\n\treturn true, `Successfully claimed day ${newStreak} reward!`, coins\nend\n\n-- Initialize network listener\nClaimRemote.OnServerEvent:Connect(function(player)\n\tlocal success, message, coins = DailyRewardsService.claim(player)\n\tprint(`[DailyRewards] Player ${player.Name} claim result: ${success} (${message})`)\nend)\n\nreturn DailyRewardsService\n"
+      },
+      "dependsOn": [
+        "op_create_claim_remote",
+        "op_create_notif_remote"
+      ],
+      "rationale": "Full server-authoritative streak calculation, leaderstats update, and remote event handling."
+    },
+    {
+      "id": "op_button_text",
+      "kind": "setProperty",
+      "target": {
+        "path": [
+          "StarterGui",
+          "Rewards",
+          "ClaimButton"
+        ],
+        "className": "TextButton"
+      },
+      "property": "Text",
+      "before": {
+        "type": "string",
+        "value": "Claim daily reward"
+      },
+      "after": {
+        "type": "string",
+        "value": "✨ Claim Daily Streak Reward"
+      },
+      "rationale": "Improves call-to-action visibility and highlights streak progression."
+    },
+    {
+      "id": "op_button_color",
+      "kind": "setProperty",
+      "target": {
+        "path": [
+          "StarterGui",
+          "Rewards",
+          "ClaimButton"
+        ],
+        "className": "TextButton"
+      },
+      "property": "BackgroundColor3",
+      "before": {
+        "type": "Color3",
+        "r": 0.16,
+        "g": 0.18,
+        "b": 0.2
+      },
+      "after": {
+        "type": "Color3",
+        "r": 0.85,
+        "g": 0.55,
+        "b": 0.17
+      },
+      "rationale": "Matches Roview reviewed amber theme for active actions."
+    }
+  ]
+}
